@@ -1,66 +1,70 @@
 <template>
   <div class="upload-page">
-    <el-card>
-      <template #header>
-        <h2>文件上传</h2>
-      </template>
+    <el-row :gutter="20">
+      <el-col :span="24">
+        <el-card>
+          <template #header>
+            <h2>文件上传</h2>
+          </template>
 
-      <el-upload
-        class="upload-area"
-        drag
-        :action="uploadUrl"
-        :before-upload="beforeUpload"
-        :on-success="handleSuccess"
-        :on-error="handleError"
-        :show-file-list="true"
-        accept=".csv,.xlsx,.xls,.json"
-      >
-        <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-        <div class="el-upload__text">
-          将文件拖到此处，或<em>点击上传</em>
-        </div>
-        <template #tip>
-          <div class="el-upload__tip">
-            支持 CSV、Excel、JSON 格式文件，文件大小不超过 100MB
+          <el-upload
+            class="upload-area"
+            drag
+            :action="uploadUrl"
+            :before-upload="beforeUpload"
+            :on-success="handleSuccess"
+            :on-error="handleError"
+            :show-file-list="true"
+            accept=".csv,.xlsx,.xls,.json"
+          >
+            <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+            <div class="el-upload__text">
+              将文件拖到此处，或<em>点击上传</em>
+            </div>
+            <template #tip>
+              <div class="el-upload__tip">
+                支持 CSV、Excel、JSON 格式文件，文件大小不超过 100MB
+              </div>
+            </template>
+          </el-upload>
+
+          <el-divider />
+
+          <div class="file-types">
+            <h3>支持的文件类型：</h3>
+            <el-row :gutter="20">
+              <el-col :span="8">
+                <el-card shadow="hover">
+                  <div class="file-type-item">
+                    <el-icon size="48" color="#67C23A"><Document /></el-icon>
+                    <h4>CSV 文件</h4>
+                    <p>逗号分隔值文件</p>
+                  </div>
+                </el-card>
+              </el-col>
+              <el-col :span="8">
+                <el-card shadow="hover">
+                  <div class="file-type-item">
+                    <el-icon size="48" color="#409EFF"><Document /></el-icon>
+                    <h4>Excel 文件</h4>
+                    <p>.xlsx / .xls 格式</p>
+                  </div>
+                </el-card>
+              </el-col>
+              <el-col :span="8">
+                <el-card shadow="hover">
+                  <div class="file-type-item">
+                    <el-icon size="48" color="#E6A23C"><Document /></el-icon>
+                    <h4>JSON 文件</h4>
+                    <p>JSON 数据格式</p>
+                  </div>
+                </el-card>
+              </el-col>
+            </el-row>
           </div>
-        </template>
-      </el-upload>
-
-      <el-divider />
-
-      <div class="file-types">
-        <h3>支持的文件类型：</h3>
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <el-card shadow="hover">
-              <div class="file-type-item">
-                <el-icon size="48" color="#67C23A"><Document /></el-icon>
-                <h4>CSV 文件</h4>
-                <p>逗号分隔值文件</p>
-              </div>
-            </el-card>
-          </el-col>
-          <el-col :span="8">
-            <el-card shadow="hover">
-              <div class="file-type-item">
-                <el-icon size="48" color="#409EFF"><Document /></el-icon>
-                <h4>Excel 文件</h4>
-                <p>.xlsx / .xls 格式</p>
-              </div>
-            </el-card>
-          </el-col>
-          <el-col :span="8">
-            <el-card shadow="hover">
-              <div class="file-type-item">
-                <el-icon size="48" color="#E6A23C"><Document /></el-icon>
-                <h4>JSON 文件</h4>
-                <p>JSON 数据格式</p>
-              </div>
-            </el-card>
-          </el-col>
-        </el-row>
-      </div>
-    </el-card>
+        </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
@@ -119,8 +123,7 @@ const handleError = (error) => {
 
 <style scoped>
 .upload-page {
-  max-width: 900px;
-  margin: 0 auto;
+  padding: 0;
 }
 
 .upload-area {

@@ -71,12 +71,13 @@ export function canDownload(status) {
 // 获取阶段对应的步骤索引
 export function getStageStep(status) {
   const stageMap = {
-    'UPLOADED': 0,
-    'PARSING': 1,
-    'CLEANING': 2,
-    'NORMALIZING': 3,
-    'EXPORTING': 4,
-    'FINISHED': 5
+    'UPLOADED': 1,      // 第1步完成
+    'PARSING': 2,       // 第2步进行中
+    'CLEANING': 3,      // 第3步进行中
+    'NORMALIZING': 4,   // 第4步进行中
+    'EXPORTING': 5,     // 第5步进行中
+    'FINISHED': 6,      // 所有步骤完成
+    'FAILED': -1
   }
-  return stageMap[status] || 0
+  return stageMap[status] !== undefined ? stageMap[status] : 0
 }

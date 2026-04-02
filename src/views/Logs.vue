@@ -1,6 +1,8 @@
 <template>
   <div class="logs-page">
-    <el-card>
+    <el-row :gutter="20">
+      <el-col :span="24">
+        <el-card>
       <template #header>
         <div class="card-header">
           <h2>日志查看</h2>
@@ -51,6 +53,8 @@
         </div>
       </div>
     </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
@@ -76,7 +80,7 @@ const loadLogs = async () => {
     const res = await getTaskLog(inputTaskId.value)
     if (res.code === 200) {
       currentTaskId.value = inputTaskId.value
-      logs.value = res.data || []
+      logs.value = res.data.logs || []
       await nextTick()
       scrollToBottom()
     }
@@ -123,8 +127,7 @@ onMounted(() => {
 
 <style scoped>
 .logs-page {
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 0;
 }
 
 .card-header {

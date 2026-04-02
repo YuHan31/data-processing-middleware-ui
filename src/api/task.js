@@ -8,8 +8,8 @@ export function createTask(data) {
   return request.post('/task/create', data)
 }
 
-export function startTask(taskId) {
-  return request.post(`/task/start/${taskId}`)
+export function startTask(taskId, config) {
+  return request.post(`/task/start/${taskId}`, config)
 }
 
 export function stopTask(taskId) {
@@ -22,4 +22,8 @@ export function getTaskStatus(taskId) {
 
 export function getTaskProgress(taskId) {
   return request.get(`/task/progress/${taskId}`)
+}
+
+export function deleteTask(taskId) {
+  return request.delete(`/task/${taskId}`)
 }

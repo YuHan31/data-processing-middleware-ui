@@ -1,6 +1,8 @@
 <template>
   <div class="task-progress-page">
-    <el-card>
+    <el-row :gutter="20">
+      <el-col :span="24">
+        <el-card>
       <template #header>
         <div class="card-header">
           <h2>任务进度</h2>
@@ -53,17 +55,19 @@
 
         <div class="stage-steps">
           <h3>处理阶段</h3>
-          <el-steps :active="getStageStep(progressData.status)" align-center>
+          <el-steps :active="getActiveStep()" align-center>
             <el-step title="已上传" description="文件上传完成" />
             <el-step title="文件解析" description="解析上传的文件" />
-            <el-step title="数据清洗" description="清洗和验证数据" />
-            <el-step title="数据标准化" description="标准化数据格式" />
+            <el-step v-if="taskConfig.enableCleaning" title="数据清洗" description="清洗和验证数据" />
+            <el-step v-if="taskConfig.enableNormalization" title="数据标准化" description="标准化数据格式" />
             <el-step title="结果导出" description="导出处理结果" />
             <el-step title="完成" description="任务执行完成" />
           </el-steps>
         </div>
       </div>
     </el-card>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
@@ -72,10 +76,29 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getTaskProgress } from '@/api/task'
-import { getStatusType, getStatusText, getProgressStatus, getStageStep } from '@/utils/taskStatus'
+import { getStatusType, getStatusText, getProgressStatus } from '@/utils/taskStatus'
 
 const route = useRoute()
 const taskId = ref(route.query.taskId)
+
+// 读取任务配置
+const taskConfig = ref(
+  JSON.parse(sessionStorage.getItem(`taskConfig_${taskId.value}`) || '{"enableCleaning":true,"enableNormalization":true}')
+)
+
+// 根据实际启用的阶段计算当前激活步骤
+const getActiveStep = () => {
+  const status = progressData.value.status
+  const steps = ['UPLOADED', 'PARSING']
+  if (taskConfig.value.enableCleaning) steps.push('CLEANING')
+  if (taskConfig.value.enableNormalization) steps.push('NORMALIZING')
+  steps.push('EXPORTING', 'FINISHED')
+  const idx = steps.indexOf(status)
+  if (idx === -1) return 0
+  // FINISHED 是最后一步时返回 steps.length，使所有步骤都显示为"已完成"状态
+  return idx === steps.length - 1 ? steps.length : idx
+}
+
 const progressData = ref({
   taskId: '',
   progress: 0,
@@ -115,8 +138,7 @@ onUnmounted(() => {
 
 <style scoped>
 .task-progress-page {
-  max-width: 1000px;
-  margin: 0 auto;
+  padding: 0;
 }
 
 .card-header {

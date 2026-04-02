@@ -80,7 +80,7 @@
             </el-table-column>
             <el-table-column prop="startTime" label="开始时间" width="180">
               <template #default="{ row }">
-                {{ row.startTime || '-' }}
+                {{ formatTime(row.startTime) }}
               </template>
             </el-table-column>
           </el-table>
@@ -103,6 +103,19 @@ const stats = ref({
 })
 
 const recentTasks = ref([])
+
+const formatTime = (timestamp) => {
+  if (!timestamp) return '-'
+  const date = new Date(timestamp)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+}
 
 const loadData = async () => {
   try {
@@ -133,7 +146,7 @@ onMounted(() => {
 
 .header-card {
   text-align: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #409EFF;
   color: white;
 }
 
