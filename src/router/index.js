@@ -2,8 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Dashboard from '@/views/Dashboard.vue'
 import Upload from '@/views/Upload.vue'
 import Tasks from '@/views/Tasks.vue'
-import TaskProgress from '@/views/TaskProgress.vue'
-import Logs from '@/views/Logs.vue'
+import TaskDetail from '@/views/TaskDetail.vue'
 import Test from '@/views/Test.vue'
 import Login from '@/views/Login.vue'
 import Register from '@/views/Register.vue'
@@ -42,14 +41,9 @@ const routes = [
     component: Tasks
   },
   {
-    path: '/task-progress',
-    name: 'TaskProgress',
-    component: TaskProgress
-  },
-  {
-    path: '/logs',
-    name: 'Logs',
-    component: Logs
+    path: '/task-detail',
+    name: 'TaskDetail',
+    component: TaskDetail
   },
   {
     path: '/test',

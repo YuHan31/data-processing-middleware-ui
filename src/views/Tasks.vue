@@ -36,7 +36,7 @@
             {{ formatTime(row.startTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="340" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
               <el-button
@@ -58,16 +58,9 @@
               <el-button
                 type="primary"
                 size="small"
-                @click="handleViewProgress(row.taskId)"
+                @click="handleViewDetail(row.taskId)"
               >
-                查看进度
-              </el-button>
-              <el-button
-                type="info"
-                size="small"
-                @click="handleViewLog(row.taskId)"
-              >
-                查看日志
+                查看详情
               </el-button>
               <el-button
                 v-if="canDownload(row.status)"
@@ -93,8 +86,8 @@
     </el-row>
 
     <!-- 启动任务配置对话框 -->
-    <el-dialog v-model="configDialogVisible" title="任务配置" width="500px">
-      <el-form :model="taskConfig" label-width="120px">
+    <el-dialog v-model="configDialogVisible" title="任务配置" width="640px" destroy-on-close>
+      <el-form :model="taskConfig" label-width="100px">
         <el-form-item label="输出格式">
           <el-radio-group v-model="taskConfig.outputFormat">
             <el-radio value="csv">CSV</el-radio>
@@ -105,13 +98,94 @@
         <el-form-item label="输出路径">
           <el-input v-model="taskConfig.outputPath" placeholder="可选，不填则使用默认路径" clearable />
         </el-form-item>
-        <el-form-item label="数据清洗">
-          <el-switch v-model="taskConfig.enableCleaning" />
-        </el-form-item>
-        <el-form-item label="数据标准化">
-          <el-switch v-model="taskConfig.enableNormalization" />
-        </el-form-item>
       </el-form>
+
+      <!-- 清洗规则选择区 -->
+      <div class="rules-section">
+        <div class="rules-header">
+          <span class="rules-title">清洗规则</span>
+          <el-tooltip content="选择需要应用的清洗规则，可拖拽调整执行顺序" placement="top">
+            <el-icon class="rules-tip"><QuestionFilled /></el-icon>
+          </el-tooltip>
+        </div>
+
+        <!-- 加载状态 -->
+        <div v-if="rulesLoading" class="rules-loading">
+          <el-icon class="is-loading"><Loading /></el-icon>
+          <span>加载规则中...</span>
+        </div>
+
+        <template v-else>
+          <!-- 基础规则 -->
+          <div class="rules-group" v-if="basicRules.length > 0">
+            <div class="rules-group-label">
+              <el-icon><Tools /></el-icon>
+              基础规则
+            </div>
+            <el-checkbox-group v-model="selectedRules">
+              <el-tooltip
+                v-for="rule in basicRules"
+                :key="rule.code"
+                :content="rule.description || rule.descriptionCn || '暂无说明'"
+                placement="top"
+                :disabled="!rule.description && !rule.descriptionCn"
+              >
+                <el-checkbox :value="rule.code" :label="rule.code" class="rule-checkbox">
+                  {{ rule.name || rule.nameCn || rule.code }}
+                </el-checkbox>
+              </el-tooltip>
+            </el-checkbox-group>
+          </div>
+
+          <!-- 高级规则 -->
+          <div class="rules-group" v-if="advancedRules.length > 0">
+            <div class="rules-group-label">
+              <el-icon><Setting /></el-icon>
+              高级规则
+            </div>
+            <el-checkbox-group v-model="selectedRules">
+              <el-tooltip
+                v-for="rule in advancedRules"
+                :key="rule.code"
+                :content="rule.description || rule.descriptionCn || '暂无说明'"
+                placement="top"
+                :disabled="!rule.description && !rule.descriptionCn"
+              >
+                <el-checkbox :value="rule.code" :label="rule.code" class="rule-checkbox">
+                  {{ rule.name || rule.nameCn || rule.code }}
+                </el-checkbox>
+              </el-tooltip>
+            </el-checkbox-group>
+          </div>
+
+          <!-- 已选规则拖拽排序 -->
+          <div class="rules-order" v-if="selectedRules.length > 0">
+            <div class="rules-group-label">
+              <el-icon><Rank /></el-icon>
+              执行顺序（拖拽调整）
+            </div>
+            <draggable
+              v-model="selectedRules"
+              item-key="code"
+              class="rules-drag-list"
+              ghost-class="ghost"
+              chosen-class="chosen"
+            >
+              <template #item="{ element }">
+                <div class="drag-item">
+                  <el-icon class="drag-icon"><Rank /></el-icon>
+                  <span>{{ getRuleName(element) }}</span>
+                </div>
+              </template>
+            </draggable>
+          </div>
+
+          <div v-if="rules.length === 0" class="rules-empty">
+            暂无可用规则
+          </div>
+        </template>
+      </div>
+
       <template #footer>
         <el-button @click="configDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="confirmStart">确定启动</el-button>
@@ -121,12 +195,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getTaskList, startTask, stopTask, deleteTask } from '@/api/task'
+import draggable from 'vuedraggable'
+import { getTaskList, startTask, stopTask, deleteTask, getCleanRules } from '@/api/task'
 import { downloadFile } from '@/api/file'
-import { getStatusType, getStatusText, getProgressStatus, canStart, canStop, canDownload } from '@/utils/taskStatus'
+import { getStatusType, getStatusText, canStart, canStop, canDownload } from '@/utils/taskStatus'
 
 const router = useRouter()
 const tasks = ref([])
@@ -136,9 +211,31 @@ const currentTaskId = ref('')
 const taskConfig = ref({
   outputFormat: 'csv',
   outputPath: '',
-  enableCleaning: true,
-  enableNormalization: true
+  rules: []
 })
+
+// 清洗规则相关
+const rules = ref([])
+const rulesLoading = ref(false)
+const selectedRules = ref([])
+
+// 默认推荐的规则码
+const defaultRuleCodes = ['TRIM', 'REMOVE_NULL', 'DEDUPLICATE']
+
+// 基础规则（普通清洗）
+const basicRuleCodes = ['TRIM', 'REMOVE_NULL', 'DEDUPLICATE', 'REMOVE_DUPLICATE', 'TO_LOWER', 'TO_UPPER', 'REMOVE_EMPTY_ROW']
+
+// 高级规则（特殊处理）
+const advancedRuleCodes = ['DATA_MASK', 'PHONE_MASK', 'EMAIL_MASK', 'NORMALIZE_DATE']
+
+const basicRules = computed(() => rules.value.filter(r => basicRuleCodes.includes(r.code)))
+const advancedRules = computed(() => rules.value.filter(r => advancedRuleCodes.includes(r.code)))
+
+const getRuleName = (code) => {
+  const rule = rules.value.find(r => r.code === code)
+  return rule ? (rule.name || rule.nameCn || code) : code
+}
+
 let refreshTimer = null
 
 const formatTime = (timestamp) => {
@@ -203,9 +300,58 @@ const checkTaskChanges = async () => {
 const handleStart = async (taskId) => {
   currentTaskId.value = taskId
   configDialogVisible.value = true
+  await loadCleanRules()
+}
+
+const loadCleanRules = async () => {
+  rulesLoading.value = true
+  try {
+    const res = await getCleanRules()
+    if (res.code === 200) {
+      const list = res.data || []
+      rules.value = list
+      // 默认勾选推荐规则
+      selectedRules.value = list
+        .filter(r => defaultRuleCodes.includes(r.code))
+        .map(r => r.code)
+    } else {
+      // 如果接口不存在或失败，使用默认规则列表
+      rules.value = [
+        { code: 'TRIM', name: '去除空格', description: '去除字段值的首尾空格' },
+        { code: 'REMOVE_NULL', name: '删除空值', description: '删除值为空或null的记录' },
+        { code: 'DEDUPLICATE', name: '去除重复', description: '删除完全重复的记录' },
+        { code: 'TO_LOWER', name: '转小写', description: '将文本字段转为小写' },
+        { code: 'TO_UPPER', name: '转大写', description: '将文本字段转为大写' },
+        { code: 'REMOVE_EMPTY_ROW', name: '删除空行', description: '删除所有字段都为空的记录' },
+        { code: 'DATA_MASK', name: '数据脱敏', description: '对敏感数据进行脱敏处理', level: 'advanced' },
+        { code: 'PHONE_MASK', name: '手机号脱敏', description: '对手机号进行脱敏（显示前三位和后四位）', level: 'advanced' },
+        { code: 'EMAIL_MASK', name: '邮箱脱敏', description: '对邮箱地址进行脱敏', level: 'advanced' },
+        { code: 'NORMALIZE_DATE', name: '日期标准化', description: '将日期统一为标准格式', level: 'advanced' }
+      ]
+      selectedRules.value = defaultRuleCodes
+    }
+  } catch (error) {
+    // 降级使用本地默认规则
+    rules.value = [
+      { code: 'TRIM', name: '去除空格', description: '去除字段值的首尾空格' },
+      { code: 'REMOVE_NULL', name: '删除空值', description: '删除值为空或null的记录' },
+      { code: 'DEDUPLICATE', name: '去除重复', description: '删除完全重复的记录' },
+      { code: 'TO_LOWER', name: '转小写', description: '将文本字段转为小写' },
+      { code: 'TO_UPPER', name: '转大写', description: '将文本字段转为大写' },
+      { code: 'REMOVE_EMPTY_ROW', name: '删除空行', description: '删除所有字段都为空的记录' },
+      { code: 'DATA_MASK', name: '数据脱敏', description: '对敏感数据进行脱敏处理', level: 'advanced' },
+      { code: 'PHONE_MASK', name: '手机号脱敏', description: '对手机号进行脱敏（显示前三位和后四位）', level: 'advanced' },
+      { code: 'EMAIL_MASK', name: '邮箱脱敏', description: '对邮箱地址进行脱敏', level: 'advanced' },
+      { code: 'NORMALIZE_DATE', name: '日期标准化', description: '将日期统一为标准格式', level: 'advanced' }
+    ]
+    selectedRules.value = defaultRuleCodes
+  } finally {
+    rulesLoading.value = false
+  }
 }
 
 const confirmStart = async () => {
+  taskConfig.value.rules = selectedRules.value
   try {
     const res = await startTask(currentTaskId.value, taskConfig.value)
     if (res.code === 200) {
@@ -246,12 +392,8 @@ const handleStop = async (taskId) => {
   }
 }
 
-const handleViewProgress = (taskId) => {
-  router.push(`/task-progress?taskId=${taskId}`)
-}
-
-const handleViewLog = (taskId) => {
-  router.push(`/logs?taskId=${taskId}`)
+const handleViewDetail = (taskId) => {
+  router.push(`/task-detail?taskId=${taskId}`)
 }
 
 const handleDownload = async (taskId) => {
@@ -330,5 +472,115 @@ onUnmounted(() => {
 
 .action-buttons::-webkit-scrollbar {
   display: none;
+}
+
+/* 清洗规则区域 */
+.rules-section {
+  border-top: 1px solid #ebeef5;
+  padding-top: 16px;
+  margin-top: 8px;
+}
+
+.rules-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.rules-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #303133;
+}
+
+.rules-tip {
+  color: #909399;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.rules-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #909399;
+  padding: 12px 0;
+}
+
+.rules-group {
+  margin-bottom: 14px;
+}
+
+.rules-group-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.rule-checkbox {
+  margin-right: 12px;
+  margin-bottom: 6px;
+}
+
+/* 规则拖拽排序 */
+.rules-order {
+  margin-top: 16px;
+}
+
+.rules-drag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px;
+  border: 1px dashed #dcdfe6;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.drag-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #fff;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #606266;
+  cursor: grab;
+  user-select: none;
+}
+
+.drag-item:active {
+  cursor: grabbing;
+}
+
+.drag-item .drag-icon {
+  color: #c0c4cc;
+  font-size: 12px;
+}
+
+/* 拖拽动画样式 */
+.ghost {
+  opacity: 0.5;
+  background: #409eff !important;
+  color: #fff !important;
+}
+
+.chosen {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.rules-empty {
+  text-align: center;
+  color: #909399;
+  padding: 16px 0;
+  font-size: 14px;
 }
 </style>

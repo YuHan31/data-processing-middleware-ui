@@ -27,3 +27,19 @@ export function getTaskProgress(taskId) {
 export function deleteTask(taskId) {
   return request.delete(`/task/${taskId}`)
 }
+
+export function getCleanRules() {
+  return request.get('/clean-rule/all')
+}
+
+export function getTaskCompare(taskId, params) {
+  return request.get(`/task/compare/${taskId}`, { params })
+}
+
+export function getTaskCompareStats(taskId) {
+  return request.get(`/task/compare/${taskId}/stats`)
+}
+
+export function getTaskCompareByField(taskId, field, params) {
+  return request.get(`/task/compare/${taskId}/field/${field}`, { params })
+}

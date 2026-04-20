@@ -23,13 +23,9 @@
           <el-icon><List /></el-icon>
           <span>任务管理</span>
         </el-menu-item>
-        <el-menu-item index="/task-progress">
+        <el-menu-item index="/task-detail">
           <el-icon><Loading /></el-icon>
-          <span>任务进度</span>
-        </el-menu-item>
-        <el-menu-item index="/logs">
-          <el-icon><Document /></el-icon>
-          <span>日志查看</span>
+          <span>任务详情</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -162,6 +158,6 @@ body {
 .main-content {
   background-color: #ffffff;
   padding: 20px;
-  overflow: hidden;
+  overflow-y: auto;
 }
 </style>
