@@ -5,7 +5,13 @@ export const register = (data) => {
 }
 
 export const login = (data) => {
-  return request.post('/user/login', data)
+  return request.post('/user/login', data).then(res => {
+    if (res.code === 200 && res.data) {
+      localStorage.setItem('userId', res.data.userId)
+      localStorage.setItem('role', res.data.role || 'USER')
+    }
+    return res
+  })
 }
 
 export const getCaptcha = () => {

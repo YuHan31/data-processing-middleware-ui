@@ -66,8 +66,15 @@ const handleLogin = async () => {
   if (res.code === 200) {
     localStorage.setItem('token', res.data.token)
     localStorage.setItem('username', res.data.nickname || res.data.username || form.value.loginId)
+    localStorage.setItem('userId', res.data.userId)
+    localStorage.setItem('role', res.data.role || 'USER')
     ElMessage.success('登录成功')
-    router.push('/')
+    // 根据角色跳转
+    if (res.data.role === 'ADMIN') {
+      router.push('/admin/users')
+    } else {
+      router.push('/')
+    }
   } else {
     ElMessage.error(res.message || '登录失败')
     refreshCaptcha()
