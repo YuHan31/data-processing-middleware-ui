@@ -63,7 +63,7 @@
     <!-- 清洗规则弹窗 -->
     <el-dialog v-model="rulesDialogVisible" title="任务清洗规则" width="500px">
       <el-descriptions :column="1" border>
-        <el-descriptions-item label="任务ID">{{ currentTask?.id }}</el-descriptions-item>
+        <el-descriptions-item label="任务ID">{{ currentTask?.taskId }}</el-descriptions-item>
         <el-descriptions-item label="任务名称">{{ currentTask?.taskName }}</el-descriptions-item>
         <el-descriptions-item label="清洗规则">
           <el-tag v-for="rule in taskRules" :key="rule" style="margin-right: 5px">{{ getRuleName(rule) }}</el-tag>
@@ -157,13 +157,17 @@ const getStatusText = (status) => {
 
 const viewRules = async (row) => {
   currentTask.value = row
+  taskRules.value = []
   try {
     const res = await getTaskRules(row.taskId)
     if (res.code === 200) {
       taskRules.value = res.data || []
+    } else {
+      ElMessage.error(res.message || '获取任务规则失败')
     }
   } catch (e) {
     taskRules.value = []
+    ElMessage.error('获取任务规则失败')
   }
   rulesDialogVisible.value = true
 }

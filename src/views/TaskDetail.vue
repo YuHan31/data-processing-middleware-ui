@@ -140,7 +140,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getTaskProgress, getTaskList } from '@/api/task'
+import { getTaskProgress, getTaskList, getTaskRules } from '@/api/task'
 import { getTaskFailureReason } from '@/api/log'
 import { getStatusType, getStatusText, getProgressStatus } from '@/utils/taskStatus'
 import DataCompare from './DataCompare.vue'
@@ -191,6 +191,25 @@ const flowDefinition = [
 // 读取任务配置中的规则
 const taskConfig = ref(null)
 const appliedRules = computed(() => taskConfig.value?.rules || [])
+
+const updateTaskRules = (rules = []) => {
+  taskConfig.value = {
+    ...(taskConfig.value || {}),
+    rules
+  }
+}
+
+const loadTaskRules = async () => {
+  if (!taskId.value) return
+  try {
+    const res = await getTaskRules(taskId.value)
+    if (res.code === 200) {
+      updateTaskRules(res.data || [])
+    }
+  } catch (error) {
+    console.error('加载任务规则失败:', error)
+  }
+}
 
 // 根据后端返回的 stage 找到对应的流程步骤
 const activeStepIndex = computed(() => {
@@ -271,6 +290,9 @@ const loadDetail = async () => {
     const res = await getTaskProgress(taskId.value)
     if (res.code === 200 && res.data) {
       detailData.value = res.data
+      if (Array.isArray(res.data.rules)) {
+        updateTaskRules(res.data.rules)
+      }
     }
   } catch (error) {
     console.error('加载任务详情失败:', error)
@@ -354,6 +376,7 @@ const formatTime = (timestamp) => {
 onMounted(() => {
   if (taskId.value) {
     loadTaskInfo()
+    loadTaskRules()
     loadDetail()
     // 每 2 秒轮询更新
     timer = setInterval(() => {

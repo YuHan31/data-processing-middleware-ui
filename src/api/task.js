@@ -1,7 +1,7 @@
 import request from './request'
 
-export function getTaskList() {
-  return request.get('/task/list')
+export function getTaskList(params) {
+  return request.get('/task/list', { params })
 }
 
 export function createTask(data) {
@@ -22,6 +22,10 @@ export function getTaskStatus(taskId) {
 
 export function getTaskProgress(taskId) {
   return request.get(`/task/progress/${taskId}`)
+}
+
+export function getTaskRules(taskId) {
+  return request.get(`/task/rules/${taskId}`)
 }
 
 export function deleteTask(taskId) {

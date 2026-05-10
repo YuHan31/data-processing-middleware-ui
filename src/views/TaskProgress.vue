@@ -74,7 +74,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getTaskProgress } from '@/api/task'
+import { getTaskProgress, getTaskRules } from '@/api/task'
 import { getStatusType, getStatusText, getProgressStatus, getStageName } from '@/utils/taskStatus'
 
 const route = useRoute()
@@ -88,6 +88,25 @@ const taskConfig = ref(
 // 判断是否启用数据清洗（有选规则才显示清洗步骤）
 const isCleaningEnabled = () => {
   return taskConfig.value.rules && taskConfig.value.rules.length > 0
+}
+
+const updateTaskRules = (rules = []) => {
+  taskConfig.value = {
+    ...(taskConfig.value || {}),
+    rules
+  }
+}
+
+const loadTaskRules = async () => {
+  if (!taskId.value) return
+  try {
+    const res = await getTaskRules(taskId.value)
+    if (res.code === 200) {
+      updateTaskRules(res.data || [])
+    }
+  } catch (error) {
+    console.error('加载任务规则失败:', error)
+  }
 }
 
 // 根据实际启用的阶段计算当前激活步骤
@@ -118,6 +137,9 @@ const loadProgress = async () => {
     const res = await getTaskProgress(taskId.value)
     if (res.code === 200 && res.data) {
       progressData.value = res.data
+      if (Array.isArray(res.data.rules)) {
+        updateTaskRules(res.data.rules)
+      }
     }
   } catch (error) {
     ElMessage.error('加载进度失败')
@@ -126,6 +148,7 @@ const loadProgress = async () => {
 
 onMounted(() => {
   if (taskId.value) {
+    loadTaskRules()
     loadProgress()
     timer = setInterval(loadProgress, 3000)
   }

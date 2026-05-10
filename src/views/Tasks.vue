@@ -206,6 +206,8 @@ import { getStatusType, getStatusText, canStart, canStop, canDownload } from '@/
 const router = useRouter()
 const tasks = ref([])
 const loading = ref(false)
+const taskPage = ref(1)
+const taskPageSize = ref(100)
 const configDialogVisible = ref(false)
 const currentTaskId = ref('')
 const taskConfig = ref({
@@ -254,7 +256,7 @@ const formatTime = (timestamp) => {
 const loadTasks = async () => {
   loading.value = true
   try {
-    const res = await getTaskList()
+    const res = await getTaskList({ page: taskPage.value, size: taskPageSize.value })
     if (res.code === 200) {
       tasks.value = res.data.tasks || res.data || []
     } else {
@@ -270,7 +272,7 @@ const loadTasks = async () => {
 
 const checkTaskChanges = async () => {
   try {
-    const res = await getTaskList()
+    const res = await getTaskList({ page: taskPage.value, size: taskPageSize.value })
     if (res.code === 200) {
       const newTasks = res.data.tasks || res.data || []
 
