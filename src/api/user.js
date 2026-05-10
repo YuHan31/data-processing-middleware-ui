@@ -21,3 +21,7 @@ export const getCaptcha = () => {
 export const checkUnique = (field, value) => {
   return request.get('/user/check-unique', { params: { field, value } })
 }
+
+export const getUserStats = () => {
+  return request.get('/user/stats')
+}

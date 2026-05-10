@@ -93,7 +93,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getTaskList } from '@/api/task'
-import { getStatusType, getStatusText, getProgressStatus, isRunningStatus } from '@/utils/taskStatus'
+import { getUserStats } from '@/api/user'
+import { getStatusType, getStatusText } from '@/utils/taskStatus'
 
 const stats = ref({
   total: 0,
@@ -119,14 +120,17 @@ const formatTime = (timestamp) => {
 
 const loadData = async () => {
   try {
-    const res = await getTaskList()
-    if (res.code === 200 && res.data) {
-      // 适配分页数据结构
-      const tasks = res.data.tasks || res.data || []
-      stats.value.total = tasks.length
-      stats.value.running = tasks.filter(t => isRunningStatus(t.status)).length
-      stats.value.completed = tasks.filter(t => t.status === 'FINISHED').length
-      stats.value.failed = tasks.filter(t => t.status === 'FAILED').length
+    const [taskRes, statsRes] = await Promise.all([getTaskList(), getUserStats()])
+
+    if (statsRes.code === 200 && statsRes.data) {
+      stats.value.total = statsRes.data.total || 0
+      stats.value.running = statsRes.data.processing || 0
+      stats.value.completed = statsRes.data.finished || 0
+      stats.value.failed = statsRes.data.failed || 0
+    }
+
+    if (taskRes.code === 200 && taskRes.data) {
+      const tasks = taskRes.data.tasks || taskRes.data || []
       recentTasks.value = tasks.slice(0, 5)
     }
   } catch (error) {
