@@ -9,8 +9,8 @@
       </div>
       <div class="stat-item changed">
         <el-icon><Edit /></el-icon>
-        <span>{{ statsData.changedRecords || 0 }}</span>
-        <span class="stat-label">条变化</span>
+        <span>{{ totalChanges }}</span>
+        <span class="stat-label">处变化</span>
       </div>
       <div class="stat-item rate">
         <span class="rate-label">变化率</span>
@@ -219,6 +219,16 @@ const activeField = ref('')
 // ---------- 计算属性 ----------
 const tableData = computed(() => listData.value.list || [])
 const totalCount = computed(() => listData.value.total || 0)
+
+// 字段变化总数：把每个字段的修改次数相加
+const totalChanges = computed(() => {
+  const fieldStats = statsData.value.fieldStats || []
+  const total = fieldStats.reduce((sum, field) => sum + (Number(field.modifications) || 0), 0)
+
+  if (total > 0) return total
+
+  return tableData.value.reduce((sum, row) => sum + (row.changedFields?.length || 0), 0)
+})
 
 // 所有字段（从数据行推断）
 const allFields = computed(() => {
