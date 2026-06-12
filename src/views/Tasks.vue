@@ -225,10 +225,10 @@ const selectedRules = ref([])
 const defaultRuleCodes = ['TRIM', 'REMOVE_NULL', 'DEDUPLICATE']
 
 // 基础规则（普通清洗）
-const basicRuleCodes = ['TRIM', 'REMOVE_NULL', 'DEDUPLICATE', 'REMOVE_DUPLICATE', 'TO_LOWER', 'TO_UPPER', 'REMOVE_EMPTY_ROW']
+const basicRuleCodes = ['TRIM', 'REMOVE_NULL', 'DEDUPLICATE', 'REMOVE_DUPLICATE', 'TO_LOWER', 'TO_UPPER', 'REMOVE_EMPTY_ROW', 'NORMALIZE_DATE']
 
 // 高级规则（特殊处理）
-const advancedRuleCodes = ['DATA_MASK', 'PHONE_MASK', 'EMAIL_MASK', 'NORMALIZE_DATE']
+const advancedRuleCodes = ['DATA_MASK', 'PHONE_MASK', 'EMAIL_MASK']
 
 const basicRules = computed(() => rules.value.filter(r => basicRuleCodes.includes(r.code)))
 const advancedRules = computed(() => rules.value.filter(r => advancedRuleCodes.includes(r.code)))
@@ -328,7 +328,7 @@ const loadCleanRules = async () => {
         { code: 'DATA_MASK', name: '数据脱敏', description: '对敏感数据进行脱敏处理', level: 'advanced' },
         { code: 'PHONE_MASK', name: '手机号脱敏', description: '对手机号进行脱敏（显示前三位和后四位）', level: 'advanced' },
         { code: 'EMAIL_MASK', name: '邮箱脱敏', description: '对邮箱地址进行脱敏', level: 'advanced' },
-        { code: 'NORMALIZE_DATE', name: '日期标准化', description: '将日期统一为标准格式', level: 'advanced' }
+        { code: 'NORMALIZE_DATE', name: '日期标准化', description: '将日期统一为标准格式', level: 'basic' }
       ]
       selectedRules.value = defaultRuleCodes
     }
@@ -344,7 +344,7 @@ const loadCleanRules = async () => {
       { code: 'DATA_MASK', name: '数据脱敏', description: '对敏感数据进行脱敏处理', level: 'advanced' },
       { code: 'PHONE_MASK', name: '手机号脱敏', description: '对手机号进行脱敏（显示前三位和后四位）', level: 'advanced' },
       { code: 'EMAIL_MASK', name: '邮箱脱敏', description: '对邮箱地址进行脱敏', level: 'advanced' },
-      { code: 'NORMALIZE_DATE', name: '日期标准化', description: '将日期统一为标准格式', level: 'advanced' }
+      { code: 'NORMALIZE_DATE', name: '日期标准化', description: '将日期统一为标准格式', level: 'basic' }
     ]
     selectedRules.value = defaultRuleCodes
   } finally {
